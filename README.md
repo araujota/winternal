@@ -6,7 +6,9 @@ An Inkeep Agent Framework project with multi-service architecture.
 
 This project follows a workspace structure with the following services:
 
-- **Agents Manage API** (Port 3002): Agent configuration and managemen
+- **Web UI** (Port 3001): Simple documentation assistant interface
+  - Two-column SPA for managing documentation URLs and chatting with AI agents
+- **Agents Manage API** (Port 3002): Agent configuration and management
   - Handles entity management and configuration endpoints.
 - **Agents Run API** (Port 3003): Agent execution and chat processing  
   - Handles agent communication. You can interact with your agents either over MCP from an MCP client or through our React UI components library
@@ -41,6 +43,11 @@ This project follows a workspace structure with the following services:
    ```
   - Follow the prompts to create the project and graph
   - Click on the "View graph in UI:" link to see the graph in the management dashboard
+
+4. **Use the Web UI:**
+   - Navigate to http://localhost:3001 to access the simple web interface
+   - Add documentation URLs in the left column
+   - Chat with the AI assistant in the right column for code generation
 
 ## Project Structure
 

@@ -32,6 +32,7 @@ async function devSetup() {
     console.log('🎉 Development environment is ready!');
     console.log('');
     console.log('📋 Available URLs:');
+    console.log(`   - Web UI:        http://localhost:3001`);
     console.log(`   - Management UI: http://localhost:3002`);
     console.log(`   - Runtime API:   http://localhost:3003`);
     console.log('');

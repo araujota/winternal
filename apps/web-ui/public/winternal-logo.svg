@@ -1,0 +1,41 @@
+<svg width="300" height="80" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Snowflake Icon -->
+  <g transform="translate(20, 20)">
+    <!-- Main branches -->
+    <line x1="20" y1="5" x2="20" y2="35" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+    <line x1="5" y1="20" x2="35" y2="20" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+    <line x1="11" y1="9" x2="29" y2="31" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+    <line x1="11" y1="31" x2="29" y2="9" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Branch decorations -->
+    <g stroke="#3b82f6" stroke-width="2" stroke-linecap="round">
+      <!-- Top branch -->
+      <line x1="16" y1="8" x2="20" y2="5"/>
+      <line x1="24" y1="8" x2="20" y2="5"/>
+      <!-- Bottom branch -->
+      <line x1="16" y1="32" x2="20" y2="35"/>
+      <line x1="24" y1="32" x2="20" y2="35"/>
+      <!-- Left branch -->
+      <line x1="8" y1="16" x2="5" y2="20"/>
+      <line x1="8" y1="24" x2="5" y2="20"/>
+      <!-- Right branch -->
+      <line x1="32" y1="16" x2="35" y2="20"/>
+      <line x1="32" y1="24" x2="35" y2="20"/>
+      <!-- Diagonal branches -->
+      <line x1="14" y1="12" x2="11" y2="9"/>
+      <line x1="14" y1="16" x2="11" y2="13"/>
+      <line x1="26" y1="12" x2="29" y2="9"/>
+      <line x1="26" y1="16" x2="29" y2="13"/>
+      <line x1="14" y1="28" x2="11" y2="31"/>
+      <line x1="14" y1="24" x2="11" y2="27"/>
+      <line x1="26" y1="28" x2="29" y2="31"/>
+      <line x1="26" y1="24" x2="29" y2="27"/>
+    </g>
+    
+    <!-- Center circle -->
+    <circle cx="20" cy="20" r="3" fill="#2563eb"/>
+  </g>
+  
+  <!-- Winternal Text -->
+  <text x="80" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e3a8a">Winternal</text>
+</svg>
