@@ -40,7 +40,7 @@ When a user provides a documentation URL and describes what they want to build:
 1. Guide them on which sections of the documentation to look for
 2. Help them identify the most relevant API endpoints, functions, or classes
 3. Suggest what specific information to copy from the docs (function signatures, examples, parameters)
-4. Format their extracted documentation content for optimal use by the librarian agent
+4. Format their extracted documentation content for optimal use by the Cline integration agent
 
 You should help users understand:
 - Which parts of documentation are most relevant for their use case
@@ -51,20 +51,59 @@ You should help users understand:
 Always provide specific guidance on what to look for in the documentation.`,
 });
 
+// Cline Integration Agent - prepares context and instructions for Cline
+const clineIntegrationAgent = agent({
+  id: 'cline-integration-agent',
+  name: 'Cline Integration Agent',
+  description: 'Prepares documentation context and instructions for Cline code generation',
+  prompt: `You are a Cline integration agent that prepares comprehensive context and instructions for Cline (the AI coding assistant) to generate code based on documentation.
+
+When you receive:
+- Extracted documentation content
+- User's code generation requirements
+- Specific implementation details
+
+Your job is to:
+1. Format the documentation content into a clear, structured context
+2. Create detailed instructions for Cline that include:
+   - The specific code to generate
+   - Required imports and dependencies
+   - Code structure and patterns from the documentation
+   - Error handling requirements
+   - Testing considerations
+3. Provide the formatted prompt that should be sent to Cline
+
+Format your output as:
+**Context for Cline:**
+[Structured documentation content with relevant examples, API references, and patterns]
+
+**Instructions for Cline:**
+[Clear, specific instructions for what code to generate, including file structure, dependencies, and implementation details]
+
+**Additional Requirements:**
+[Any specific requirements like error handling, testing, logging, etc.]
+
+Make the instructions as specific and actionable as possible so Cline can generate high-quality, documentation-compliant code.`,
+});
+
 // Coordinator Agent - routes between documentation help and code generation
 const librarianCoordinator = agent({
   id: 'librarian-coordinator',
   name: 'Librarian Coordinator',
-  description: 'Routes between documentation context extraction and code generation',
-  prompt: `You are a librarian coordinator that helps users with documentation-based code generation.
+  description: 'Routes between documentation context extraction, Cline integration, and code generation',
+  prompt: `You are a librarian coordinator that helps users with documentation-based code generation using Cline.
 
 When a user provides a documentation URL and a code generation request:
 1. If they haven't provided the actual documentation content yet, delegate to the documentation context agent to help them extract the relevant information
-2. Once they have the documentation content, delegate to the librarian agent for code generation
-3. Coordinate between agents to ensure the user gets comprehensive help
+2. Once they have the documentation content and requirements, delegate to the Cline integration agent to prepare the context and instructions for Cline
+3. If they need direct assistance with understanding the documentation or have questions, delegate to the librarian agent
+4. Coordinate between agents to ensure the user gets comprehensive help in the right sequence
 
-Your role is to ensure users get the right help at the right time - first helping them extract documentation content, then generating code based on that content.`,
-  canDelegateTo: () => [docContextAgent, librarianAgent],
+Your workflow should be:
+Documentation URL + Requirements → Documentation Context Agent → Cline Integration Agent → User copies output to Cline
+
+Your role is to ensure users get the right help at the right time and end up with properly formatted instructions they can give to Cline.`,
+  canDelegateTo: () => [docContextAgent, clineIntegrationAgent, librarianAgent],
 });
 
 // Agent Graph
@@ -72,5 +111,5 @@ export const librarianGraph = agentGraph({
   id: 'librarian-graph',
   name: 'Librarian Documentation Assistant',
   defaultAgent: librarianCoordinator,
-  agents: () => [librarianCoordinator, librarianAgent, docContextAgent],
+  agents: () => [librarianCoordinator, librarianAgent, docContextAgent, clineIntegrationAgent],
 });

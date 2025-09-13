@@ -94,42 +94,75 @@ Your inkeep configuration is defined in `src/winternal/inkeep.config.ts`. The in
 - `agentsRunApiUrl`: The Run API URL
 
 
-## Using the Librarian Agent
+## Using the Librarian Agent with Cline
 
-The Librarian Agent is designed to help you generate code by referencing online documentation. Here's how to use it effectively:
+The Librarian Agent is designed to help you prepare documentation context and instructions for Cline (the AI coding assistant) to generate high-quality code. Here's how the workflow works:
 
 ### How it Works
 
 1. **Provide a Documentation URL**: Give the agent a URL to relevant documentation (API docs, library documentation, tutorials, etc.)
 2. **Describe Your Code Generation Need**: Explain what you want to build or implement
-3. **Get Guided Help**: The agent will guide you through extracting the relevant documentation content
-4. **Receive Generated Code**: Get code that follows the patterns and best practices from the documentation
+3. **Get Documentation Extraction Guidance**: The Documentation Context Agent guides you through extracting relevant content
+4. **Receive Cline-Ready Instructions**: The Cline Integration Agent formats everything into structured instructions you can copy to Cline
+5. **Use with Cline**: Copy the formatted instructions to Cline for actual code generation
 
 ### Example Usage Flow
 
 ```
 User: "I want to use the Stripe API to create a payment intent. Here's the documentation: https://stripe.com/docs/api/payment_intents/create"
 
-Librarian: "I'd be happy to help you create a payment intent using the Stripe API! Since I can't directly access URLs, could you please copy the relevant sections from the Stripe documentation? Specifically, I'll need:
+Documentation Context Agent: "I'll help you extract the right information from the Stripe documentation. Please copy these specific sections:
 
 1. The API endpoint and HTTP method
-2. Required parameters for creating a payment intent
-3. Any code examples they provide
-4. Authentication requirements
+2. Required parameters (amount, currency, etc.)
+3. Authentication headers required
+4. Any code examples they provide
+5. Error response formats
 
-This will help me generate accurate code that follows Stripe's conventions."
+This will give us everything needed for Cline to generate proper Stripe integration code."
 
-User: [Provides the documentation content]
+User: [Provides the extracted documentation content]
 
-Librarian: [Generates code with proper error handling, following Stripe's patterns]
+Cline Integration Agent: "Perfect! Here's the formatted context and instructions for Cline:
+
+**Context for Cline:**
+[Structured documentation content with API endpoints, parameters, examples]
+
+**Instructions for Cline:**
+Generate a Node.js function to create a Stripe payment intent with the following requirements:
+- Use the Stripe SDK
+- Include proper error handling for all documented error cases
+- Add TypeScript types for parameters and responses
+- Include JSDoc comments explaining each parameter
+- Create both a basic version and an advanced version with options
+
+**Additional Requirements:**
+- Add input validation
+- Include unit tests
+- Add logging for debugging
+- Handle network timeouts
+
+[Copy this entire formatted output to Cline for code generation]"
 ```
 
 ### Best Practices
 
-- **Be Specific**: The more specific your request, the better the generated code
-- **Include Examples**: If the documentation has code examples, include them
-- **Mention Your Language/Framework**: Specify if you need Python, JavaScript, React, etc.
-- **Describe Your Use Case**: Context helps generate more appropriate code
+- **Be Specific About Requirements**: The more detailed your requirements, the better the Cline instructions will be
+- **Include All Relevant Documentation**: Copy complete sections including examples, error cases, and best practices
+- **Specify Your Tech Stack**: Mention your language, framework, testing preferences, etc.
+- **Describe Your Use Case**: Context helps generate more appropriate and complete instructions for Cline
+- **Review the Formatted Output**: Check the Cline instructions before copying them to ensure they match your needs
+
+### Agent Workflow
+
+The librarian system uses multiple specialized agents:
+
+1. **Librarian Coordinator**: Routes your request to the appropriate agent
+2. **Documentation Context Agent**: Helps you extract the right information from documentation
+3. **Cline Integration Agent**: Formats everything into structured instructions for Cline
+4. **Librarian Agent**: Provides direct help with documentation questions if needed
+
+The end goal is always to provide you with comprehensive, well-formatted instructions that you can copy directly to Cline for code generation.
 
 ## Development
 
