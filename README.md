@@ -28,13 +28,16 @@ This project follows a workspace structure with the following services:
    inkeep dev
    ```
 
-3. **Deploy your first agent graph:**
+3. **Deploy your agent graphs:**
    ```bash
    # Navigate to your project's graph directory
    cd src/winternal/
    
    # Push the weather graph to create it
    inkeep push weather.graph.ts
+   
+   # Push the librarian graph to create it
+   inkeep push librarian.graph.ts
    ```
   - Follow the prompts to create the project and graph
   - Click on the "View graph in UI:" link to see the graph in the management dashboard
@@ -78,9 +81,10 @@ OPENAI_API_KEY=your-openai-key-here
 
 ### Agent Configuration
 
-Your graphs are defined in `src/winternal/weather.graph.ts`. The default setup includes:
+Your graphs are defined in `src/winternal/`. The default setup includes:
 
-- **Weather Graph**: A graph that can forecast the weather in a given location.
+- **Weather Graph** (`weather.graph.ts`): A graph that can forecast the weather in a given location.
+- **Librarian Graph** (`librarian.graph.ts`): A documentation-aware code generation assistant that can reference online documentation to help with code generation tasks.
 
 Your inkeep configuration is defined in `src/winternal/inkeep.config.ts`. The inkeep configuration is used to configure defaults for the inkeep CLI. The configuration includes:
 
@@ -90,12 +94,51 @@ Your inkeep configuration is defined in `src/winternal/inkeep.config.ts`. The in
 - `agentsRunApiUrl`: The Run API URL
 
 
+## Using the Librarian Agent
+
+The Librarian Agent is designed to help you generate code by referencing online documentation. Here's how to use it effectively:
+
+### How it Works
+
+1. **Provide a Documentation URL**: Give the agent a URL to relevant documentation (API docs, library documentation, tutorials, etc.)
+2. **Describe Your Code Generation Need**: Explain what you want to build or implement
+3. **Get Guided Help**: The agent will guide you through extracting the relevant documentation content
+4. **Receive Generated Code**: Get code that follows the patterns and best practices from the documentation
+
+### Example Usage Flow
+
+```
+User: "I want to use the Stripe API to create a payment intent. Here's the documentation: https://stripe.com/docs/api/payment_intents/create"
+
+Librarian: "I'd be happy to help you create a payment intent using the Stripe API! Since I can't directly access URLs, could you please copy the relevant sections from the Stripe documentation? Specifically, I'll need:
+
+1. The API endpoint and HTTP method
+2. Required parameters for creating a payment intent
+3. Any code examples they provide
+4. Authentication requirements
+
+This will help me generate accurate code that follows Stripe's conventions."
+
+User: [Provides the documentation content]
+
+Librarian: [Generates code with proper error handling, following Stripe's patterns]
+```
+
+### Best Practices
+
+- **Be Specific**: The more specific your request, the better the generated code
+- **Include Examples**: If the documentation has code examples, include them
+- **Mention Your Language/Framework**: Specify if you need Python, JavaScript, React, etc.
+- **Describe Your Use Case**: Context helps generate more appropriate code
+
 ## Development
 
 ### Updating Your Agents
 
-1. Edit `src/winternal/weather.graph.ts`
-2. Push the graph to the platform to update: `inkeep pus weather.graph.ts` 
+1. Edit the graph files in `src/winternal/`
+2. Push the graph to the platform to update: 
+   - `inkeep push weather.graph.ts`
+   - `inkeep push librarian.graph.ts` 
 
 ### API Documentation
 
