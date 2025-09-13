@@ -94,75 +94,88 @@ Your inkeep configuration is defined in `src/winternal/inkeep.config.ts`. The in
 - `agentsRunApiUrl`: The Run API URL
 
 
-## Using the Librarian Agent with Cline
+## Using the Librarian Agent with MCP Server
 
-The Librarian Agent is designed to help you prepare documentation context and instructions for Cline (the AI coding assistant) to generate high-quality code. Here's how the workflow works:
+The Librarian Agent now works with a dedicated MCP (Model Context Protocol) server that provides documentation search capabilities. This allows Cline to directly access documentation tools for code generation.
 
-### How it Works
+### Architecture Overview
 
-1. **Provide a Documentation URL**: Give the agent a URL to relevant documentation (API docs, library documentation, tutorials, etc.)
-2. **Describe Your Code Generation Need**: Explain what you want to build or implement
-3. **Get Documentation Extraction Guidance**: The Documentation Context Agent guides you through extracting relevant content
-4. **Receive Cline-Ready Instructions**: The Cline Integration Agent formats everything into structured instructions you can copy to Cline
-5. **Use with Cline**: Copy the formatted instructions to Cline for actual code generation
+1. **Documentation MCP Server**: A standalone server that can fetch, parse, and search documentation from URLs
+2. **Librarian Agents**: Inkeep agents that use the MCP server for documentation research and code generation
+3. **Cline Integration**: Cline connects to the MCP server to access documentation tools directly
 
-### Example Usage Flow
+### Setting Up the MCP Server
+
+1. **Build the MCP Server**:
+   ```bash
+   pnpm mcp:build
+   ```
+
+2. **Configure Cline to use the MCP Server**:
+   - Copy the `cline-mcp-config.json` to your Cline MCP configuration
+   - Or manually add the server in Cline's MCP settings:
+     ```json
+     {
+       "mcpServers": {
+         "documentation-search": {
+           "command": "node",
+           "args": ["/path/to/winternal/apps/documentation-mcp-server/dist/index.js"],
+           "env": {}
+         }
+       }
+     }
+     ```
+
+3. **Start the MCP Server** (if running standalone):
+   ```bash
+   pnpm mcp:start
+   ```
+
+### Available MCP Tools for Cline
+
+When connected to the MCP server, Cline will have access to these tools:
+
+1. **fetch_documentation**: Fetch and parse documentation from any URL
+   - Parameters: `url` (required), `selector` (optional CSS selector)
+   - Returns: Parsed documentation content
+
+2. **search_documentation**: Search through documentation content
+   - Parameters: `query`, `content`, `maxResults`
+   - Returns: Relevant sections ranked by relevance
+
+3. **extract_code_examples**: Extract code examples from documentation
+   - Parameters: `content`, `language` (optional)
+   - Returns: Code examples with language detection and context
+
+### Example Workflow
 
 ```
-User: "I want to use the Stripe API to create a payment intent. Here's the documentation: https://stripe.com/docs/api/payment_intents/create"
+1. User asks Cline: "Use the Stripe API documentation to create a payment intent function"
 
-Documentation Context Agent: "I'll help you extract the right information from the Stripe documentation. Please copy these specific sections:
+2. Cline uses fetch_documentation tool:
+   - URL: https://stripe.com/docs/api/payment_intents/create
+   - Gets structured documentation content
 
-1. The API endpoint and HTTP method
-2. Required parameters (amount, currency, etc.)
-3. Authentication headers required
-4. Any code examples they provide
-5. Error response formats
+3. Cline uses search_documentation tool:
+   - Query: "create payment intent parameters"
+   - Finds relevant sections about required parameters
 
-This will give us everything needed for Cline to generate proper Stripe integration code."
+4. Cline uses extract_code_examples tool:
+   - Extracts JavaScript/Node.js examples from the docs
 
-User: [Provides the extracted documentation content]
-
-Cline Integration Agent: "Perfect! Here's the formatted context and instructions for Cline:
-
-**Context for Cline:**
-[Structured documentation content with API endpoints, parameters, examples]
-
-**Instructions for Cline:**
-Generate a Node.js function to create a Stripe payment intent with the following requirements:
-- Use the Stripe SDK
-- Include proper error handling for all documented error cases
-- Add TypeScript types for parameters and responses
-- Include JSDoc comments explaining each parameter
-- Create both a basic version and an advanced version with options
-
-**Additional Requirements:**
-- Add input validation
-- Include unit tests
-- Add logging for debugging
-- Handle network timeouts
-
-[Copy this entire formatted output to Cline for code generation]"
+5. Cline generates code using the documentation context:
+   - Follows exact API patterns from docs
+   - Includes proper error handling
+   - Uses correct parameter names and types
 ```
 
-### Best Practices
+### Benefits of MCP Architecture
 
-- **Be Specific About Requirements**: The more detailed your requirements, the better the Cline instructions will be
-- **Include All Relevant Documentation**: Copy complete sections including examples, error cases, and best practices
-- **Specify Your Tech Stack**: Mention your language, framework, testing preferences, etc.
-- **Describe Your Use Case**: Context helps generate more appropriate and complete instructions for Cline
-- **Review the Formatted Output**: Check the Cline instructions before copying them to ensure they match your needs
-
-### Agent Workflow
-
-The librarian system uses multiple specialized agents:
-
-1. **Librarian Coordinator**: Routes your request to the appropriate agent
-2. **Documentation Context Agent**: Helps you extract the right information from documentation
-3. **Cline Integration Agent**: Formats everything into structured instructions for Cline
-4. **Librarian Agent**: Provides direct help with documentation questions if needed
-
-The end goal is always to provide you with comprehensive, well-formatted instructions that you can copy directly to Cline for code generation.
+- **Direct Access**: Cline can fetch documentation in real-time
+- **Always Current**: No need to manually copy/paste documentation
+- **Comprehensive**: Can search and extract specific information as needed
+- **Efficient**: Caches documentation to avoid repeated fetches
+- **Flexible**: Works with any documentation URL
 
 ## Development
 

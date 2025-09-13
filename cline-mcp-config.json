@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "documentation-search": {
+      "command": "node",
+      "args": [
+        "/Users/tyleraraujo/winternal/apps/documentation-mcp-server/dist/index.js"
+      ],
+      "env": {}
+    }
+  }
+}

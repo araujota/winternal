@@ -9,7 +9,9 @@
     "db:push": "drizzle-kit push",
     "setup": "node scripts/setup.js",
     "dev:setup": "node scripts/dev-setup.js",
-    "start": "pnpm dev:setup"
+    "start": "pnpm dev:setup",
+    "mcp:build": "turbo build --filter=documentation-mcp-server",
+    "mcp:start": "turbo mcp:start --filter=documentation-mcp-server"
   },
   "dependencies": {
     "@inkeep/agents-core": "^0.1.0",

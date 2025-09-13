@@ -38,6 +38,12 @@
       "cache": false,
       "persistent": true
     },
+    "mcp:start": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    },
     "start": {
       "dependsOn": [
         "build"
