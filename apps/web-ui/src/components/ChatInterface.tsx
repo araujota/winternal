@@ -10,10 +10,11 @@ interface Message {
 
 interface ChatInterfaceProps {
   urls: string[]
+  messages: Message[]
+  onMessagesUpdate: (messages: Message[]) => void
 }
 
-export function ChatInterface({ urls }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
+export function ChatInterface({ urls, messages, onMessagesUpdate }: ChatInterfaceProps) {
   const [inputMessage, setInputMessage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [streamingTimeout, setStreamingTimeout] = useState(false)
@@ -66,7 +67,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
       timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
+    onMessagesUpdate([...messages, userMessage])
     setInputMessage('')
     setIsProcessing(true)
 
@@ -78,7 +79,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
         content: `Processing your request with ${urls.length} documentation source${urls.length !== 1 ? 's' : ''}...\n\nWorkflow:\n1. Fetching and analyzing documentation\n2. Extracting relevant patterns and examples\n3. Generating code based on documentation conventions`,
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, systemMessage])
+      onMessagesUpdate([...messages, userMessage, systemMessage])
 
       // Create the assistant message that will be updated as content streams in
       const assistantMessage: Message = {
@@ -90,29 +91,35 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
       }
 
       // Remove system message and add streaming assistant message
-      setMessages(prev => prev.filter(m => m.id !== systemMessage.id).concat([assistantMessage]))
+      const messagesWithoutSystem = [...messages, userMessage].filter(m => m.id !== systemMessage.id)
+      onMessagesUpdate([...messagesWithoutSystem, assistantMessage])
 
       // Start the streaming timeout
       resetStreamingTimeout()
 
+      // Keep track of current messages for streaming
+      let currentMessages = [...messagesWithoutSystem, assistantMessage]
+      
       // Call the agent workflow with streaming callback
       const response = await processAgentRequest(inputMessage.trim(), urls, (streamingContent: string) => {
         // Reset timeout whenever we receive new content
         resetStreamingTimeout()
-        setMessages(prev => prev.map(m => 
+        currentMessages = currentMessages.map(m => 
           m.id === assistantMessage.id 
             ? { ...m, content: streamingContent, isStreaming: true }
             : m
-        ))
+        )
+        onMessagesUpdate(currentMessages)
       })
       
       // Mark streaming as complete and clear timeout
       clearStreamingTimeout()
-      setMessages(prev => prev.map(m => 
+      const finalMessages = currentMessages.map(m => 
         m.id === assistantMessage.id 
           ? { ...m, content: response, isStreaming: false }
           : m
-      ))
+      )
+      onMessagesUpdate(finalMessages)
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 3).toString(),
@@ -120,7 +127,8 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
         content: `Error: ${error instanceof Error ? error.message : 'Something went wrong'}`,
         timestamp: new Date()
       }
-      setMessages(prev => prev.filter(m => m.type !== 'system').concat([errorMessage]))
+      const errorMessages = messages.filter(m => m.type !== 'system').concat([userMessage, errorMessage])
+      onMessagesUpdate(errorMessages)
     } finally {
       clearStreamingTimeout()
       setIsProcessing(false)
@@ -135,16 +143,16 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
   }
 
   const clearChat = () => {
-    setMessages([])
+    onMessagesUpdate([])
   }
 
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4">
+      <div className="h-[32rem] overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
-            <div className="mb-4">🤖</div>
+            <div className="mb-2">🤖</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               Ready to help with code generation
             </h3>

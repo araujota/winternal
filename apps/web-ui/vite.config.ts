@@ -10,4 +10,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  define: {
+    'import.meta.env.VITE_RUN_API_PORT': JSON.stringify(process.env.RUN_API_PORT || '3003'),
+  },
 })

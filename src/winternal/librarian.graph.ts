@@ -1,11 +1,6 @@
-import { agent, agentGraph, mcpTool } from '@inkeep/agents-sdk';
 
-// MCP Tool for documentation operations
-const documentationTool = mcpTool({
-  id: 'documentation-mcp-tool',
-  name: 'Documentation Search Tool',
-  serverUrl: 'stdio://documentation-mcp-server', // This will be the MCP server we created
-});
+
+import { agent, agentGraph } from '@inkeep/agents-sdk';
 
 // Main Librarian Agent - researches documentation and prepares writeups for code generation
 const librarianAgent = agent({
@@ -50,7 +45,6 @@ Key principles:
 - CITATION-READY: Structure information so the code generation agent can easily cite specific parts
 
 After preparing your writeup, explicitly state that you're transferring control to the code generation agent for implementation.`,
-  canUse: () => [documentationTool],
 });
 
 // Code Generation Agent - generates single, focused code implementations
@@ -127,7 +121,6 @@ CRITICAL CONSTRAINTS:
 - Every line of code must be traceable to specific documentation text
 
 You do NOT provide multiple examples, alternative approaches, or different implementations. Your job is to create the ONE BEST solution using ONLY documented functionality, with comprehensive citations showing exactly how the documentation informed each part of your implementation.`,
-  canUse: () => [documentationTool],
 });
 
 // Coordinator Agent - manages documentation research and code generation workflow

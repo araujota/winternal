@@ -56,6 +56,16 @@
         "drizzle.config.ts",
         "src/data/db/schema.ts"
       ]
+    },
+    "convex:dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "convex:deploy": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
     }
   }
 }

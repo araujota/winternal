@@ -23,10 +23,11 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.0",
     "@inkeep/agents-cli": "^0.1.1",
+    "concurrently": "^8.2.0",
+    "convex": "^1.27.0",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.19.0",
     "turbo": "^2.5.5",
-    "concurrently": "^8.2.0",
     "wait-on": "^8.0.0"
   },
   "engines": {
