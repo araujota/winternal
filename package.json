@@ -10,6 +10,7 @@
     "setup": "node scripts/setup.js",
     "dev:setup": "node scripts/dev-setup.js",
     "start": "pnpm dev:setup",
+    "network-info": "node scripts/network-info.js",
     "mcp:build": "turbo build --filter=documentation-mcp-server",
     "mcp:start": "turbo mcp:start --filter=documentation-mcp-server"
   },

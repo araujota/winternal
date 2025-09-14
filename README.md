@@ -49,6 +49,28 @@ This project follows a workspace structure with the following services:
    - Add documentation URLs in the left column
    - Chat with the AI assistant in the right column for code generation
 
+## Network Access
+
+All services are configured to be accessible from other devices on your local network:
+
+```bash
+# Get your network IP addresses and access URLs
+pnpm network-info
+```
+
+This will show you:
+- Your machine's IP addresses
+- URLs to access services from other devices on your network
+- Security considerations
+
+**Services accessible on network:**
+- Web UI: `http://YOUR_IP:3001`
+- Management API: `http://YOUR_IP:3002`
+- Run API: `http://YOUR_IP:3003`
+- Inkeep Dashboard: `http://YOUR_IP:3000`
+
+**Security Note:** Services are accessible to all devices on your local network. Only share these URLs with trusted devices.
+
 ## Project Structure
 
 ```

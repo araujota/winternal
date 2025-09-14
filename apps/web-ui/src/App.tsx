@@ -57,8 +57,8 @@ function App() {
           </div>
 
           {/* Right Column - Chat Interface */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-4 border-b">
+          <div className="bg-white rounded-lg shadow-sm border flex flex-col">
+            <div className="p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">
                 AI Assistant
               </h2>
@@ -66,7 +66,9 @@ function App() {
                 Ask for code generation based on your documentation
               </p>
             </div>
-            <ChatInterface urls={urls} />
+            <div className="flex-1 min-h-0">
+              <ChatInterface urls={urls} />
+            </div>
           </div>
         </div>
       </main>

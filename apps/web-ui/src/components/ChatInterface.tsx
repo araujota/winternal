@@ -16,16 +16,44 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [streamingTimeout, setStreamingTimeout] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const streamingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const resetStreamingTimeout = () => {
+    if (streamingTimeoutRef.current) {
+      clearTimeout(streamingTimeoutRef.current)
+    }
+    setStreamingTimeout(false)
+    streamingTimeoutRef.current = setTimeout(() => {
+      setStreamingTimeout(true)
+    }, 3000)
+  }
+
+  const clearStreamingTimeout = () => {
+    if (streamingTimeoutRef.current) {
+      clearTimeout(streamingTimeoutRef.current)
+      streamingTimeoutRef.current = null
+    }
+    setStreamingTimeout(false)
+  }
+
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    return () => {
+      if (streamingTimeoutRef.current) {
+        clearTimeout(streamingTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,17 +80,39 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
       }
       setMessages(prev => [...prev, systemMessage])
 
-      // Call the agent workflow
-      const response = await processAgentRequest(inputMessage.trim(), urls)
-      
+      // Create the assistant message that will be updated as content streams in
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
         type: 'assistant',
-        content: response,
-        timestamp: new Date()
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true
       }
 
+      // Remove system message and add streaming assistant message
       setMessages(prev => prev.filter(m => m.id !== systemMessage.id).concat([assistantMessage]))
+
+      // Start the streaming timeout
+      resetStreamingTimeout()
+
+      // Call the agent workflow with streaming callback
+      const response = await processAgentRequest(inputMessage.trim(), urls, (streamingContent: string) => {
+        // Reset timeout whenever we receive new content
+        resetStreamingTimeout()
+        setMessages(prev => prev.map(m => 
+          m.id === assistantMessage.id 
+            ? { ...m, content: streamingContent, isStreaming: true }
+            : m
+        ))
+      })
+      
+      // Mark streaming as complete and clear timeout
+      clearStreamingTimeout()
+      setMessages(prev => prev.map(m => 
+        m.id === assistantMessage.id 
+          ? { ...m, content: response, isStreaming: false }
+          : m
+      ))
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 3).toString(),
@@ -72,6 +122,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
       }
       setMessages(prev => prev.filter(m => m.type !== 'system').concat([errorMessage]))
     } finally {
+      clearStreamingTimeout()
       setIsProcessing(false)
     }
   }
@@ -90,7 +141,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="h-96 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
             <div className="mb-4">🤖</div>
@@ -131,6 +182,15 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
               >
                 <div className="whitespace-pre-wrap break-words">
                   {message.content}
+                  {message.isStreaming && (
+                    streamingTimeout ? (
+                      <div className="inline-block ml-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                      </div>
+                    ) : (
+                      <span className="inline-block w-2 h-4 bg-current ml-1 animate-pulse">|</span>
+                    )
+                  )}
                 </div>
                 <div
                   className={`text-xs mt-1 opacity-70 ${
@@ -147,7 +207,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
       </div>
 
       {/* Input Area */}
-      <div className="border-t bg-gray-50 p-4">
+      <div className="border-t bg-gray-50 p-4 flex-shrink-0">
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
             <textarea
@@ -160,7 +220,7 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
                   ? "Ask me to generate code based on your documentation..."
                   : "Add documentation URLs first, then ask for code generation..."
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32"
               rows={3}
               disabled={isProcessing || urls.length === 0}
             />
@@ -200,61 +260,122 @@ export function ChatInterface({ urls }: ChatInterfaceProps) {
 }
 
 // API Configuration
-const MANAGE_API_URL = import.meta.env.VITE_MANAGE_API_URL || 'http://localhost:3002'
-const RUN_API_URL = import.meta.env.VITE_RUN_API_URL || 'http://localhost:3003'
+const RUN_API_URL = (import.meta as any).env?.VITE_RUN_API_URL || 'http://localhost:3003'
 
-// Function to process agent requests
-async function processAgentRequest(message: string, urls: string[]): Promise<string> {
+// Helper function to clean system messages from content
+function cleanSystemMessages(content: string): string {
+  if (!content) return content
+  
+  // Remove data-operation messages that appear at the beginning or end
+  let cleaned = content
+  
+  // Remove JSON data-operation messages
+  cleaned = cleaned.replace(/\{"type":"data-operation"[^}]*\}/g, '')
+  
+  // Remove any remaining system messages patterns
+  cleaned = cleaned.replace(/^[^a-zA-Z]*I'll help you/, "I'll help you")
+  
+  // Clean up any trailing system messages or incomplete JSON
+  cleaned = cleaned.replace(/\{"type":"data-operation".*$/s, '')
+  cleaned = cleaned.replace(/\{"type":"error".*$/s, '')
+  
+  // Trim whitespace and newlines
+  cleaned = cleaned.trim()
+  
+  return cleaned
+}
+
+// Function to process agent requests using Inkeep's chat completions API
+async function processAgentRequest(message: string, urls: string[], onStreamUpdate?: (content: string) => void): Promise<string> {
   try {
-    // First, we need to create an agent session
-    const sessionResponse = await fetch(`${MANAGE_API_URL}/sessions`, {
+    // Use the direct chat completions endpoint with proper Inkeep formatting
+    const response = await fetch(`${RUN_API_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Note: In a production environment, you would include authentication headers here
+        // 'Authorization': 'Bearer YOUR_API_KEY',
+        'x-inkeep-tenant-id': 'default',
+        'x-inkeep-project-id': 'winternal',
+        'x-inkeep-graph-id': 'librarian-graph'
       },
       body: JSON.stringify({
-        agentGraphId: 'librarian-graph',
-        metadata: {
+        model: 'librarian-graph', // Use the graph ID as the model
+        messages: [
+          {
+            role: 'user',
+            content: urls.length > 0 
+              ? `Implement the following code generation request: ${message} using the ${urls.length > 1 ? 'libraries' : 'library'} documented at ${urls.join(', ')}`
+              : `Implement the following code generation request: ${message}`
+          }
+        ],
+        stream: true, // Enable streaming for better user experience
+        requestContext: {
           documentationUrls: urls
         }
       })
     })
 
-    if (!sessionResponse.ok) {
-      throw new Error(`Failed to create session: ${sessionResponse.statusText}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
-    const session = await sessionResponse.json()
-    const sessionId = session.id
-
-    // Now send the message to the agent
-    const messageResponse = await fetch(`${RUN_API_URL}/sessions/${sessionId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        content: `Please help me with this code generation request. I have provided ${urls.length} documentation URLs: ${urls.join(', ')}. 
-
-User request: ${message}
-
-Please:
-1. Use your documentation tools to fetch and analyze the provided documentation
-2. Extract relevant code examples and patterns from the documentation
-3. Generate high-quality code that follows the documentation's conventions and best practices
-4. Include proper imports, error handling, and comments
-5. Provide explanations referencing specific parts of the documentation
-
-The goal is to create code that matches the patterns and conventions shown in the provided documentation sources.`
-      })
-    })
-
-    if (!messageResponse.ok) {
-      throw new Error(`Failed to send message: ${messageResponse.statusText}`)
+    // Handle streaming response
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body received')
     }
 
-    const messageResult = await messageResponse.json()
-    return messageResult.content || 'I received your request and am processing it with the documentation sources.'
+    const decoder = new TextDecoder()
+    let fullContent = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') {
+              return fullContent
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.choices && parsed.choices[0]?.delta?.content) {
+                const deltaContent = parsed.choices[0].delta.content
+                
+                // Filter out system/internal messages that shouldn't be shown to users
+                if (!deltaContent.includes('"type":"data-operation"') && 
+                    !deltaContent.includes('{"type":"data-operation"') &&
+                    !deltaContent.startsWith('{"type":"data-operation"')) {
+                  fullContent += deltaContent
+                  // Call the streaming callback if provided
+                  if (onStreamUpdate) {
+                    const cleanedContent = cleanSystemMessages(fullContent)
+                    onStreamUpdate(cleanedContent)
+                  }
+                }
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+              continue
+            }
+          }
+        }
+      }
+
+      // Clean up any remaining system messages from the final content
+      const cleanedContent = cleanSystemMessages(fullContent)
+      return cleanedContent || 'I received your request and am processing it with the documentation sources.'
+    } finally {
+      reader.releaseLock()
+    }
 
   } catch (error) {
     console.error('Error processing agent request:', error)
